@@ -507,7 +507,7 @@ class Economy:
 
     @_bank.command(pass_context=True, no_pm=True)
     async def register(self, ctx):
-        """Registers an account at the Twentysix bank"""
+        """Gives the invoker a copy of Fake Overwatch and registers their data in the server's files."""
         user = ctx.message.author
         try:
             account = self.bank.create_account(user)
@@ -579,45 +579,51 @@ class Economy:
         rolls = ["", "", "", ""]
         lootmessage = ""
         payout = 0
-        for roll in rolls:
-            lootnumber = randint(0, 10000)
-            if lootnumber <= 5866:
-                roll = "Common"
-            elif lootnumber <= 9035:
-                roll = "Rare"
-            elif lootnumber <= 9757:
-                roll = "Epic"
-            else:
-                roll = "Legendary"
-        if rolls[0] == rolls[1] == rolls[2] == rolls[3] == "Common":
-            rolls[2] = "Rare"  # Force a rare roll if all 4 rolls were common. Do this before payout is calculated.
-        for roll in rolls:
-            lootmessageline = ""
-            if roll == "Common":
-                payout += 5
-                lootmessageline = generatelootmessageline("Common")
-                lootmessageline += "+5:gem:"
-            elif roll == "Rare":
-                payout += 15
-                lootmessageline = generatelootmessageline("Rare")
-                lootmessageline += "+15:gem:"
-            elif roll == "Epic":
-                payout += 50
-                lootmessageline = generatelootmessageline("Epic")
-                lootmessageline += "+50:gem:"
-            elif roll == "Legendary":
-                payout += 200
-                lootmessageline = generatelootmessageline("Legendary")
-                lootmessageline += "+200:gem:"
-            lootmessage += lootmessageline
 
         if self.bank.account_exists(author):
             if id in self.payday_register[server.id]:
                 seconds = abs(self.payday_register[server.id][id] - int(time.perf_counter()))
                 if seconds >= self.settings[server.id]["PAYDAY_TIME"]:
+                    rolls = []
+                    lootmessage = ""
+                    payout = 0
+                    for i in range(4):
+                        lootnumber = randint(0, 10000)
+                        if lootnumber <= 5866:
+                            rolls.append("Common")
+                        elif lootnumber <= 9035:
+                            rolls.append("Rare")
+                        elif lootnumber <= 9757:
+                            rolls.append("Epic")
+                        else:
+                            rolls.append("Legendary")
+                    if rolls[0] == rolls[1] == rolls[2] == rolls[3] == "Common":
+                        rolls[
+                            2] = "Rare"  # Force a rare roll if all 4 rolls were common. Do this before payout is calculated.
+                    for i in range(4):
+                        lootmessageline = ""
+                        if rolls[i] == "Common":
+                            payout += 5
+                            lootmessageline = generatelootmessageline("Common")
+                            lootmessageline += "+5:gem:"
+                        elif rolls[i] == "Rare":
+                            payout += 15
+                            lootmessageline = generatelootmessageline("Rare")
+                            lootmessageline += "+15:gem:"
+                        elif rolls[i] == "Epic":
+                            payout += 50
+                            lootmessageline = generatelootmessageline("Epic")
+                            lootmessageline += "+50:gem:"
+                        elif rolls[i] == "Legendary":
+                            payout += 200
+                            lootmessageline = generatelootmessageline("Legendary")
+                            lootmessageline += "+200:gem:"
+                        lootmessage += lootmessageline + "\n"
                     self.bank.deposit_credits(author, payout)
                     self.payday_register[server.id][id] = int(time.perf_counter())
-                    await self.bot.say("{} levelled up and opened a Fake Lootbox!\n".format(author.mention) + lootmessage)
+                    await self.bot.say(
+                        "{} levelled up and opened a Fake Lootbox!\n".format(author.mention) + lootmessage +
+                        "\n\n{} now has {}:gem:.".format(author.mention, self.bank.get_balance(author)))
 
                 else:
                     await self.bot.say(
@@ -627,9 +633,45 @@ class Economy:
                                                                                                            server.id][
                                                                                                            "PAYDAY_TIME"] - seconds)))
             else:
-                self.payday_register[server.id][id] = int(time.perf_counter())
+                rolls = []
+                lootmessage = ""
+                payout = 0
+                for i in range(4):
+                    lootnumber = randint(0, 10000)
+                    if lootnumber <= 5866:
+                        rolls.append("Common")
+                    elif lootnumber <= 9035:
+                        rolls.append("Rare")
+                    elif lootnumber <= 9757:
+                        rolls.append("Epic")
+                    else:
+                        rolls.append("Legendary")
+                if rolls[0] == rolls[1] == rolls[2] == rolls[3] == "Common":
+                    rolls[
+                        2] = "Rare"  # Force a rare roll if all 4 rolls were common. Do this before payout is calculated.
+                for i in range(4):
+                    lootmessageline = ""
+                    if rolls[i] == "Common":
+                        payout += 5
+                        lootmessageline = generatelootmessageline("Common")
+                        lootmessageline += "+5:gem:"
+                    elif rolls[i] == "Rare":
+                        payout += 15
+                        lootmessageline = generatelootmessageline("Rare")
+                        lootmessageline += "+15:gem:"
+                    elif rolls[i] == "Epic":
+                        payout += 50
+                        lootmessageline = generatelootmessageline("Epic")
+                        lootmessageline += "+50:gem:"
+                    elif rolls[i] == "Legendary":
+                        payout += 200
+                        lootmessageline = generatelootmessageline("Legendary")
+                        lootmessageline += "+200:gem:"
+                    lootmessage += lootmessageline + "\n"
                 self.bank.deposit_credits(author, payout)
-                await self.bot.say("{} levelled up and opened their Fake Lootbox!\n" + lootmessage)
+                self.payday_register[server.id][id] = int(time.perf_counter())
+                await self.bot.say("{} levelled up and opened a Fake Lootbox!\n".format(author.mention) + lootmessage +
+                                   "\n\n{} now has {}:gem:.".format(author.mention, self.bank.get_balance(author)))
         else:
             await self.bot.say(
                 "{} You need Fake Overwatch to open a lootbox. Type {}buyfakeoverwatch to buy Fake Overwatch for 0:gem:.".format(
@@ -716,27 +758,28 @@ class Economy:
     @commands.command(pass_context=True, no_pm=True)
     async def slot(self, ctx):
         """Buy a Fake Lootbox with 50 Fake Gems."""
+        bid = 50  # Lootboxes always cost 50.
         author = ctx.message.author
         server = author.server
         if not self.bank.account_exists(author):
             await self.bot.say(
-                "{} You need an account to use the slot machine. Type {}bank register to open one.".format(
+                "{} You don't have Fake Overwatch. Type {}buyfakeoverwatch to buy Fake Overwatch.".format(
                     author.mention, ctx.prefix))
             return
-        if self.bank.can_spend(author, 50):
-            if self.settings[server.id]["SLOT_MIN"] <= 50 <= self.settings[server.id]["SLOT_MAX"]:
+        if self.bank.can_spend(author, bid):
+            if self.settings[server.id]["SLOT_MIN"] <= bid <= self.settings[server.id]["SLOT_MAX"]:
                 if author.id in self.slot_register:
                     if abs(self.slot_register[author.id] - int(time.perf_counter())) >= self.settings[server.id][
                         "SLOT_TIME"]:
                         self.slot_register[author.id] = int(time.perf_counter())
-                        await self.slot_machine(ctx.message, bid)
+                        await self.slot_machine(ctx.message, bid, author)
                     else:
                         await self.bot.say(
-                            "Slot machine is still cooling off! Wait {} seconds between each pull".format(
+                            "You can't open Fake Lootboxes that fast! You need to wait for the cool Fake Animation! {} seconds left.".format(
                                 self.settings[server.id]["SLOT_TIME"]))
                 else:
                     self.slot_register[author.id] = int(time.perf_counter())
-                    await self.slot_machine(ctx.message, bid)
+                    await self.slot_machine(ctx.message, bid, author)
             else:
                 await self.bot.say("Admin goofed. Tell them about it.")
         else:
@@ -744,43 +787,47 @@ class Economy:
                 "{0} You don't have enough Fake Gems to buy a Fake Lootbox."
                 "Fake Lootboxes cost 50:gem:.".format(author.mention))
 
-    async def slot_machine(self, message, bid):
-        rolls = ["", "", "", ""]
+    async def slot_machine(self, message, bid, author):
+        rolls = []
         lootmessage = ""
         payout = 0
-        for roll in rolls:
+        for i in range(4):
             lootnumber = randint(0, 10000)
             if lootnumber <= 5866:
-                roll = "Common"
+                rolls.append("Common")
             elif lootnumber <= 9035:
-                roll = "Rare"
+                rolls.append("Rare")
             elif lootnumber <= 9757:
-                roll = "Epic"
+                rolls.append("Epic")
             else:
-                roll = "Legendary"
+                rolls.append("Legendary")
         if rolls[0] == rolls[1] == rolls[2] == rolls[3] == "Common":
-            rolls[2] = "Rare"  # Force a rare roll if all 4 rolls were common. Do this before payout is calculated.
-        for roll in rolls:
+            rolls[
+                2] = "Rare"  # Force a rare roll if all 4 rolls were common. Do this before payout is calculated.
+        for i in range(4):
             lootmessageline = ""
-            if roll == "Common":
+            if rolls[i] == "Common":
                 payout += 5
                 lootmessageline = generatelootmessageline("Common")
                 lootmessageline += "+5:gem:"
-            elif roll == "Rare":
+            elif rolls[i] == "Rare":
                 payout += 15
                 lootmessageline = generatelootmessageline("Rare")
                 lootmessageline += "+15:gem:"
-            elif roll == "Epic":
+            elif rolls[i] == "Epic":
                 payout += 50
                 lootmessageline = generatelootmessageline("Epic")
                 lootmessageline += "+50:gem:"
-            elif roll == "Legendary":
+            elif rolls[i] == "Legendary":
                 payout += 200
                 lootmessageline = generatelootmessageline("Legendary")
                 lootmessageline += "+200:gem:"
+            lootmessage += lootmessageline + "\n"
 
+        self.bank.withdraw_credits(message.author, 50)
         self.bank.deposit_credits(message.author, payout)
-        await self.bot.say("{} purchased and opened a Fake Lootbox!\n".format(author.mention) + lootmessage)
+        await self.bot.say("{} purchased and opened a Fake Lootbox!\n".format(author.mention) + lootmessage +
+                           "\n\n{} now has {}:gem:.".format(author.mention, self.bank.get_balance(message.author)))
 
     @commands.group(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_server=True)
