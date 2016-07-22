@@ -1,4 +1,4 @@
-"jokebot, because it's a joke" - wagtail 2016
+# "jokebot, because it's a joke" - wagtail 2016
 
 This is a "custom edition" of the Red discord bot intended for Wagtail's discord server and TrizKnight's discord server.
 
