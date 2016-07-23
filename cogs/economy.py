@@ -33,7 +33,7 @@ commonloot = {
                "Siege Mode", "Six-Gun Killer", "Sol", "Soulstone", "Vivi's Adventure", "Action (Ana)", "Ana (Ana)",
                "Bearer", "Cheer", "Cracked", "Cute (Ana)", "Eyepatch", "Fareeha", "Gaze (Ana)", "Grenade",
                "Guardian (Ana)", "Hesitation", "Icon (Ana)", "Letter", "Old Soldier (Ana)", "Overhead", "Photograph",
-               "Pixel (Ana)", "Rifle (Ana)", "Shadow (Ana)", "Shhh" "Sidearm", "Wedjat (Ana)", "Wrist Launcher (Ana)",
+               "Pixel (Ana)", "Rifle (Ana)", "Shadow (Ana)", "Shhh", "Sidearm", "Wedjat (Ana)", "Wrist Launcher (Ana)",
                "ZZZ", "Action (Bastion)", "Bird" "Birdwatchers", "Black", "Blocks", "Cannon (Bastion)", "Crisis",
                "Curious", "Cute (Bastion)", "ES4", "Fire at Will", "Flight", "Flower Power", "Ganymede", "Giant",
                "Icon (Bastion)", "In Repairs", "Nest", "Omnic", "Overgrown", "Pixel (Bastion)", "Recovery", "Retro",
