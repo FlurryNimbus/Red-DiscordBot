@@ -232,6 +232,7 @@ class Audio:
     """Music Streaming."""
 
     def __init__(self, bot):
+        self.econ = None
         self.bot = bot
         self.queue = {}  # add deque's, repeat
         self.downloaders = {}  # sid: object
@@ -1189,6 +1190,7 @@ class Audio:
         server = ctx.message.server
         author = ctx.message.author
         voice_channel = author.voice_channel
+        self.econ = self.bot.get_cog('Economy')
 
         # Checking if playing in current server
 
@@ -1237,9 +1239,15 @@ class Audio:
         if "[SEARCH:]" not in url and "youtube" in url:
             url = url.split("&")[0] # Temp fix for the &list issue
 
-        self._stop_player(server)
-        self._clear_queue(server)
-        self._add_to_queue(server, url)
+        if self.econ.bank.can_spend(author, 30):
+            await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.mention))
+            self.econ.bank.withdraw_credits(author, 30)
+            await self.bot.say("{} now has {}:gem:.".format(author.mention, self.econ.bank.get_balance(author)))
+            self._stop_player(server)
+            self._clear_queue(server)
+            self._add_to_queue(server, url)
+        else:
+            await self.bot.say("You can't afford that! Open more Fake Lootboxes to gain Fake Gems.")
 
     @commands.command(pass_context=True, no_pm=True)
     async def prev(self, ctx):
@@ -1441,6 +1449,9 @@ class Audio:
             added to the song loop (if running). If you use `queue` when a
             playlist is running, it will temporarily be played next and will
             NOT stay in the playlist loop."""
+        self.econ = self.bot.get_cog('Economy')
+        server = ctx.message.server
+        author = ctx.message.author
         if url is None:
             return await self._queue_list(ctx)
         server = ctx.message.server
@@ -1468,14 +1479,20 @@ class Audio:
 
         # We have a queue to modify
         if self.queue[server.id]["PLAYLIST"]:
-            log.debug("queueing to the temp_queue for sid {}".format(
-                server.id))
-            self._add_to_temp_queue(server, url)
+            if self.econ.bank.can_spend(author, 30):
+                await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.mention))
+                self.econ.bank.withdraw_credits(author, 30)
+                log.debug("queueing to the temp_queue for sid {}".format(
+                    server.id))
+                self._add_to_temp_queue(server, url)
+            else:
+                await self.bot.say("You can't afford that! Open more Fake Lootboxes to gain Fake Gems.")
         else:
             log.debug("queueing to the actual queue for sid {}".format(
                 server.id))
             self._add_to_queue(server, url)
         await self.bot.say("Queued.")
+        await self.bot.say("{} now has {}:gem:.".format(author.mention, self.econ.bank.get_balance(author)))
 
     async def _queue_list(self, ctx):
         """Not a command, use `queue` with no args to call this."""
@@ -1588,12 +1605,34 @@ class Audio:
     async def skip(self, ctx):
         """Skips the currently playing song"""
         server = ctx.message.server
+        author = ctx.message.author
+        self.econ = self.bot.get_cog('Economy')
+        if self.is_playing(server):
+            if self.econ.bank.can_spend(author, 100):
+                await self.bot.say("{} put 100:gem: in the Jukebox and smashed the SKIP button.".format(author.mention))
+                self.econ.bank.withdraw_credits(author, 100)
+                await self.bot.say("{} now has {}:gem:.".format(author.mention, self.econ.bank.get_balance(author)))
+                vc = self.voice_client(server)
+                vc.audio_player.stop()
+                if self._get_queue_repeat(server) is False:
+                    self._set_queue_nowplaying(server, None)
+                await self.bot.say("Skipping...")
+            else:
+                await self.bot.say("You can't afford that! Open more Fake Lootboxes to gain Fake Gems.")
+        else:
+            await self.bot.say("Can't skip if I'm not playing.")
+
+    @commands.command(pass_context=True, no_pm=True)
+    @checks.mod_or_permissions(mute_members=True)
+    async def modskip(self, ctx):
+        """Skips the currently playing song"""
+        server = ctx.message.server
         if self.is_playing(server):
             vc = self.voice_client(server)
             vc.audio_player.stop()
             if self._get_queue_repeat(server) is False:
                 self._set_queue_nowplaying(server, None)
-            await self.bot.say("Skipping...")
+            await self.bot.say("Mod Skipping...")
         else:
             await self.bot.say("Can't skip if I'm not playing.")
 
