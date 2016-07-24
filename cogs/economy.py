@@ -33,7 +33,7 @@ commonloot = {
                "Siege Mode", "Six-Gun Killer", "Sol", "Soulstone", "Vivi's Adventure", "Action (Ana)", "Ana (Ana)",
                "Bearer", "Cheer", "Cracked", "Cute (Ana)", "Eyepatch", "Fareeha", "Gaze (Ana)", "Grenade",
                "Guardian (Ana)", "Hesitation", "Icon (Ana)", "Letter", "Old Soldier (Ana)", "Overhead", "Photograph",
-               "Pixel (Ana)", "Rifle (Ana)", "Shadow (Ana)", "Shhh", "Sidearm", "Wedjat (Ana)", "Wrist Launcher (Ana)",
+               "Pixel (Ana)", "Rifle (Ana)", "Shadow (Ana)", "Shhh" "Sidearm", "Wedjat (Ana)", "Wrist Launcher (Ana)",
                "ZZZ", "Action (Bastion)", "Bird" "Birdwatchers", "Black", "Blocks", "Cannon (Bastion)", "Crisis",
                "Curious", "Cute (Bastion)", "ES4", "Fire at Will", "Flight", "Flower Power", "Ganymede", "Giant",
                "Icon (Bastion)", "In Repairs", "Nest", "Omnic", "Overgrown", "Pixel (Bastion)", "Recovery", "Retro",
@@ -512,10 +512,10 @@ class Economy:
         try:
             account = self.bank.create_account(user)
             await self.bot.say("{} You purchased Fake Overwatch for 0:gem:. You receive a pouch for your Fake Gems. "
-                               "Current balance: {}:gem:".format(user.mention,
+                               "Current balance: {}:gem:".format(user.display_name,
                                                                  account.balance))
         except AccountAlreadyExists:
-            await self.bot.say("{} You already have Fake Overwatch!".format(user.mention))
+            await self.bot.say("{} You already have Fake Overwatch!".format(user.display_name))
 
     @_bank.command(pass_context=True)
     async def balance(self, ctx, user: discord.Member = None):
@@ -525,14 +525,14 @@ class Economy:
         if not user:
             user = ctx.message.author
             try:
-                await self.bot.say("{} You have {}:gem:.".format(user.mention, self.bank.get_balance(user)))
+                await self.bot.say("{} You have {}:gem:.".format(user.display_name, self.bank.get_balance(user)))
             except NoAccount:
                 await self.bot.say("{} You don't have Fake Overwatch."
-                                   " Type {}buyfakeoverwatch to buy Fake Overwatch for 0:gem:.".format(user.mention,
+                                   " Type {}buyfakeoverwatch to buy Fake Overwatch for 0:gem:.".format(user.display_name,
                                                                                                        ctx.prefix))
         else:
             try:
-                await self.bot.say("{} has {}:gem:.".format(user.name, self.bank.get_balance(user)))
+                await self.bot.say("{} has {}:gem:.".format(user.display_name, self.bank.get_balance(user)))
             except NoAccount:
                 await self.bot.say("That user doesn't have Fake Overwatch.")
 
@@ -544,7 +544,7 @@ class Economy:
             self.bank.transfer_credits(author, user, sum)
             logger.info("{}({}) transferred {}:gem: to {}({})".format(
                 author.name, author.id, sum, user.name, user.id))
-            await self.bot.say("{}:gem: transferred to {}.".format(sum, user.name))
+            await self.bot.say("{} sent {}:gem: to {}.".format(author.mention, sum, user.mention))
         except NegativeValue:
             await self.bot.say("You need to transfer at least 1:gem:.")
         except SameSenderAndReceiver:
@@ -566,7 +566,7 @@ class Economy:
             self.bank.set_credits(user, sum)
             logger.info("{}({}) set {} credits to {} ({})".format(author.name, author.id, str(sum), user.name, user.id))
             await self.bot.say(
-                "An admin abused their power to set {}'s inventory to {}:gem:.".format(user.name, str(sum)))
+                "An admin abused their power to set {}'s inventory to {}:gem:.".format(user.mention, str(sum)))
         except NoAccount:
             await self.bot.say("User doesn't have Fake Overwatch.")
 
@@ -622,8 +622,8 @@ class Economy:
                     self.bank.deposit_credits(author, payout)
                     self.payday_register[server.id][id] = int(time.perf_counter())
                     await self.bot.say(
-                        "{} levelled up and opened a Fake Lootbox!\n".format(author.mention) + lootmessage +
-                        "\n\n{} now has {}:gem:.".format(author.mention, self.bank.get_balance(author)))
+                        "{} levelled up and opened a Fake Lootbox!\n".format(author.display_name) + lootmessage +
+                        "\n\n{} now has {}:gem:.".format(author.display_name, self.bank.get_balance(author)))
 
                 else:
                     await self.bot.say(
@@ -670,8 +670,8 @@ class Economy:
                     lootmessage += lootmessageline + "\n"
                 self.bank.deposit_credits(author, payout)
                 self.payday_register[server.id][id] = int(time.perf_counter())
-                await self.bot.say("{} levelled up and opened a Fake Lootbox!\n".format(author.mention) + lootmessage +
-                                   "\n\n{} now has {}:gem:.".format(author.mention, self.bank.get_balance(author)))
+                await self.bot.say("{} levelled up and opened a Fake Lootbox!\n".format(author.display_name) + lootmessage +
+                                   "\n\n{} now has {}:gem:.".format(author.display_name, self.bank.get_balance(author)))
         else:
             await self.bot.say(
                 "{} You need Fake Overwatch to open a lootbox. Type {}buyfakeoverwatch to buy Fake Overwatch for 0:gem:.".format(
@@ -826,8 +826,8 @@ class Economy:
 
         self.bank.withdraw_credits(message.author, 50)
         self.bank.deposit_credits(message.author, payout)
-        await self.bot.say("{} purchased and opened a Fake Lootbox!\n".format(author.mention) + lootmessage +
-                           "\n\n{} now has {}:gem:.".format(author.mention, self.bank.get_balance(message.author)))
+        await self.bot.say("{} purchased and opened a Fake Lootbox!\n".format(author.display_name) + lootmessage +
+                           "\n\n{} now has {}:gem:.".format(author.display_name, self.bank.get_balance(message.author)))
 
     @commands.group(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_server=True)
