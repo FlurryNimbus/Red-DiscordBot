@@ -281,7 +281,7 @@ class Audio:
 
     def _cache_min(self):
         x = self._server_count()
-        return max([60, 48 * math.log(x) * x**0.3])  # log is not log10
+        return max([60, 48 * math.log(x) * x ** 0.3])  # log is not log10
 
     def _cache_required_files(self):
         queue = copy.deepcopy(self.queue)
@@ -297,7 +297,7 @@ class Audio:
     def _cache_size(self):
         songs = os.listdir(self.cache_path)
         size = sum(map(lambda s: os.path.getsize(
-            os.path.join(self.cache_path, s)) / 10**6, songs))
+            os.path.join(self.cache_path, s)) / 10 ** 6, songs))
         return size
 
     def _cache_too_large(self):
@@ -797,7 +797,7 @@ class Audio:
 
     def _playlist_exists(self, server, name):
         return self._playlist_exists_local(server, name) or \
-            self._playlist_exists_global(name)
+               self._playlist_exists_global(name)
 
     def _playlist_exists_global(self, name):
         f = "data/audio/playlists"
@@ -968,7 +968,7 @@ class Audio:
             await self.bot.say("Sorry, but because of the number of servers"
                                " that your bot is in I cannot safely allow"
                                " you to have less than {} MB of cache.".format(
-                                   self._cache_min()))
+                self._cache_min()))
             return
 
         self.settings["MAX_CACHE"] = size
@@ -1237,12 +1237,12 @@ class Audio:
             url = "[SEARCH:]" + url
 
         if "[SEARCH:]" not in url and "youtube" in url:
-            url = url.split("&")[0] # Temp fix for the &list issue
+            url = url.split("&")[0]  # Temp fix for the &list issue
 
         if self.econ.bank.can_spend(author, 30):
-            await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.mention))
+            await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.display_name))
             self.econ.bank.withdraw_credits(author, 30)
-            await self.bot.say("{} now has {}:gem:.".format(author.mention, self.econ.bank.get_balance(author)))
+            await self.bot.say("{} now has {}:gem:.".format(author.display_name, self.econ.bank.get_balance(author)))
             self._stop_player(server)
             self._clear_queue(server)
             self._add_to_queue(server, url)
@@ -1475,12 +1475,12 @@ class Audio:
             url = "[SEARCH:]" + url
 
         if "[SEARCH:]" not in url and "youtube" in url:
-            url = url.split("&")[0] # Temp fix for the &list issue
+            url = url.split("&")[0]  # Temp fix for the &list issue
 
         # We have a queue to modify
         if self.queue[server.id]["PLAYLIST"]:
             if self.econ.bank.can_spend(author, 30):
-                await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.mention))
+                await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.display_name))
                 self.econ.bank.withdraw_credits(author, 30)
                 log.debug("queueing to the temp_queue for sid {}".format(
                     server.id))
@@ -1492,7 +1492,7 @@ class Audio:
                 server.id))
             self._add_to_queue(server, url)
         await self.bot.say("Queued.")
-        await self.bot.say("{} now has {}:gem:.".format(author.mention, self.econ.bank.get_balance(author)))
+        await self.bot.say("{} now has {}:gem:.".format(author.display_name, self.econ.bank.get_balance(author)))
 
     async def _queue_list(self, ctx):
         """Not a command, use `queue` with no args to call this."""
@@ -1609,9 +1609,11 @@ class Audio:
         self.econ = self.bot.get_cog('Economy')
         if self.is_playing(server):
             if self.econ.bank.can_spend(author, 100):
-                await self.bot.say("{} put 100:gem: in the Jukebox and smashed the SKIP button.".format(author.mention))
+                await self.bot.say(
+                    "{} put 100:gem: in the Jukebox and smashed the SKIP button.".format(author.display_name))
                 self.econ.bank.withdraw_credits(author, 100)
-                await self.bot.say("{} now has {}:gem:.".format(author.mention, self.econ.bank.get_balance(author)))
+                await self.bot.say(
+                    "{} now has {}:gem:.".format(author.display_name, self.econ.bank.get_balance(author)))
                 vc = self.voice_client(server)
                 vc.audio_player.stop()
                 if self._get_queue_repeat(server) is False:
@@ -1667,12 +1669,12 @@ class Audio:
                 dur = None
             msg = ("\n**Title:** {}\n**Author:** {}\n**Uploader:** {}\n"
                    "**Views:** {}\n**Duration:** {}\n\n<{}>".format(
-                       song.title, song.creator, song.uploader,
-                       song.view_count, dur, song.webpage_url))
+                song.title, song.creator, song.uploader,
+                song.view_count, dur, song.webpage_url))
             await self.bot.say(msg.replace("**Author:** None\n", "")
-                                  .replace("**Views:** None\n", "")
-                                  .replace("**Uploader:** None\n", "")
-                                  .replace("**Duration:** None\n", ""))
+                               .replace("**Views:** None\n", "")
+                               .replace("**Uploader:** None\n", "")
+                               .replace("**Duration:** None\n", ""))
         else:
             await self.bot.say("Darude - Sandstorm.")
 
@@ -1728,7 +1730,7 @@ class Audio:
                 server = vc.server
                 if not hasattr(vc, 'audio_player') and \
                         (server not in stop_times or
-                         stop_times[server] is None):
+                                 stop_times[server] is None):
                     log.debug("putting sid {} in stop loop, no player".format(
                         server.id))
                     stop_times[server] = int(time.time())
@@ -1736,7 +1738,7 @@ class Audio:
                 if hasattr(vc, 'audio_player'):
                     if vc.audio_player.is_done() and \
                             (server not in stop_times or
-                             stop_times[server] is None):
+                                     stop_times[server] is None):
                         log.debug("putting sid {} in stop loop".format(
                             server.id))
                         stop_times[server] = int(time.time())
@@ -1745,7 +1747,7 @@ class Audio:
 
             for server in stop_times:
                 if stop_times[server] and \
-                        int(time.time()) - stop_times[server] > 300:
+                                        int(time.time()) - stop_times[server] > 300:
                     # 5 min not playing to d/c
                     log.debug("dcing from sid {} after 300s".format(server.id))
                     await self._disconnect_voice_client(server)
@@ -1850,7 +1852,7 @@ class Audio:
             queue = copy.deepcopy(self.queue)
             for sid in queue:
                 if len(queue[sid]["QUEUE"]) == 0 and \
-                        len(queue[sid]["TEMP_QUEUE"]) == 0:
+                                len(queue[sid]["TEMP_QUEUE"]) == 0:
                     continue
                 # log.debug("scheduler found a non-empty queue"
                 #           " for sid: {}".format(sid))
@@ -1910,7 +1912,7 @@ class Audio:
                 vc.audio_player.pause()
             elif not after.mute and \
                     (not vc.audio_player.is_playing() and
-                     not vc.audio_player.is_done()):
+                         not vc.audio_player.is_done()):
                 log.debug("just got unmuted, resuming")
                 vc.audio_player.resume()
 
