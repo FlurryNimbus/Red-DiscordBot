@@ -238,7 +238,7 @@ class Audio:
         self.downloaders = {}  # sid: object
         self.settings = fileIO("data/audio/settings.json", 'load')
         self.server_specific_setting_keys = ["VOLUME", "QUEUE_MODE",
-                                             "VOTE_THRESHOLD"]
+                                             "VOTE_THRESHOLD", "SR_COST", "SKIP_COST"]
         self.cache_path = "data/audio/cache"
         self.local_playlist_path = "data/audio/localtracks"
         self._old_game = False
@@ -769,7 +769,7 @@ class Audio:
 
         self._setup_queue(server)
         self._set_queue_playlist(server, name)
-        self._set_queue_repeat(server, True)
+        self._set_queue_repeat(server, False)  # was True in original code, this change is for server specific behavior
         self._set_queue(server, songlist)
 
     def _play_local_playlist(self, server, name):
@@ -1042,6 +1042,32 @@ class Audio:
         self.set_server_setting(server, "VOTE_THRESHOLD", percent)
         self.save_settings()
 
+    @audioset.command(pass_context=True, name="srcost", no_pm=True)
+    @checks.admin_or_permissions(manage_server=True)
+    async def audioset_srcost(self, ctx, cost: int):
+        """Sets the cost for song requests."""
+        server = ctx.message.server
+        if cost < 0:
+            await self.bot.say("Cost shouldn't be negative.")
+            return
+
+        await self.bot.say("Songrequest cost set to {}:gem:.".format(cost))
+        self.set_server_setting(server, "SR_COST", cost)
+        self.save_settings()
+
+    @audioset.command(pass_context=True, name="skipcost", no_pm=True)
+    @checks.admin_or_permissions(manage_server=True)
+    async def audioset_skipcost(self, ctx, cost: int):
+        """Sets the cost for skips."""
+        server = ctx.message.server
+        if cost < 0:
+            await self.bot.say("Cost shouldn't be negative.")
+            return
+
+        await self.bot.say("Skip cost set to {}:gem:.".format(cost))
+        self.set_server_setting(server, "SKIP_COST", cost)
+        self.save_settings()
+
     @commands.group(pass_context=True)
     async def audiostat(self, ctx):
         """General stats on audio stuff."""
@@ -1188,6 +1214,7 @@ class Audio:
         """Plays a link / searches and play"""
         url = url_or_search_terms
         server = ctx.message.server
+        settings = self.get_server_settings(server)
         author = ctx.message.author
         voice_channel = author.voice_channel
         self.econ = self.bot.get_cog('Economy')
@@ -1239,9 +1266,10 @@ class Audio:
         if "[SEARCH:]" not in url and "youtube" in url:
             url = url.split("&")[0]  # Temp fix for the &list issue
 
-        if self.econ.bank.can_spend(author, 30):
-            await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.display_name))
-            self.econ.bank.withdraw_credits(author, 30)
+        if self.econ.bank.can_spend(author, settings["SR_COST"]):
+            await self.bot.say("{} put {}:gem: in the Jukebox and selected a song.".format(author.display_name,
+                                                                                           settings["SR_COST"]))
+            self.econ.bank.withdraw_credits(author, settings["SR_COST"])
             await self.bot.say("{} now has {}:gem:.".format(author.display_name, self.econ.bank.get_balance(author)))
             self._stop_player(server)
             self._clear_queue(server)
@@ -1451,6 +1479,7 @@ class Audio:
             NOT stay in the playlist loop."""
         self.econ = self.bot.get_cog('Economy')
         server = ctx.message.server
+        settings = self.get_server_settings(server)
         author = ctx.message.author
         if url is None:
             return await self._queue_list(ctx)
@@ -1479,9 +1508,11 @@ class Audio:
 
         # We have a queue to modify
         if self.queue[server.id]["PLAYLIST"]:
-            if self.econ.bank.can_spend(author, 30):
-                await self.bot.say("{} put 30:gem: in the Jukebox and selected a song.".format(author.display_name))
-                self.econ.bank.withdraw_credits(author, 30)
+            if self.econ.bank.can_spend(author, settings["SR_COST"]):
+                await self.bot.say("{} put {}:gem: in the Jukebox and selected a song.".format(author.display_name,
+                                                                                               settings[
+                                                                                                   "SR_COST"]))
+                self.econ.bank.withdraw_credits(author, settings["SR_COST"])
                 log.debug("queueing to the temp_queue for sid {}".format(
                     server.id))
                 self._add_to_temp_queue(server, url)
@@ -1496,6 +1527,50 @@ class Audio:
 
     async def _queue_list(self, ctx):
         """Not a command, use `queue` with no args to call this."""
+        server = ctx.message.server
+        if server.id not in self.queue:
+            await self.bot.say("Nothing playing on this server!")
+            return
+        elif len(self.queue[server.id]["QUEUE"]) == 0:
+            await self.bot.say("Nothing queued on this server.")
+            return
+
+        msg = ""
+
+        now_playing = self._get_queue_nowplaying(server)
+
+        if now_playing is not None:
+            msg += "\n***Now playing:***\n{}\n".format(now_playing.title)
+
+        queue_url_list = self._get_queue(server, 5)
+        tempqueue_url_list = self._get_queue_tempqueue(server, 5)
+
+        await self.bot.say("Gathering information...")
+
+        queue_song_list = await self._download_all(queue_url_list)
+        tempqueue_song_list = await self._download_all(tempqueue_url_list)
+
+        song_info = []
+        for num, song in enumerate(tempqueue_song_list, 1):
+            try:
+                song_info.append("{}. {.title}".format(num, song))
+            except AttributeError:
+                song_info.append("{}. {.webpage_url}".format(num, song))
+
+        for num, song in enumerate(queue_song_list, len(song_info) + 1):
+            if num > 5:
+                break
+            try:
+                song_info.append("{}. {.title}".format(num, song))
+            except AttributeError:
+                song_info.append("{}. {.webpage_url}".format(num, song))
+        msg += "\n***Next up:***\n" + "\n".join(song_info)
+
+        await self.bot.say(msg)
+
+    @commands.command(pass_context=True, no_pm=True)
+    async def nowplaying(self, ctx):
+        """Copy pasting _queue_list so users can see what's playing while keeping !queue locked."""
         server = ctx.message.server
         if server.id not in self.queue:
             await self.bot.say("Nothing playing on this server!")
@@ -1605,13 +1680,15 @@ class Audio:
     async def skip(self, ctx):
         """Skips the currently playing song"""
         server = ctx.message.server
+        settings = self.get_server_settings(server)
         author = ctx.message.author
         self.econ = self.bot.get_cog('Economy')
         if self.is_playing(server):
-            if self.econ.bank.can_spend(author, 100):
+            if self.econ.bank.can_spend(author, settings["SKIP_COST"]):
                 await self.bot.say(
-                    "{} put 100:gem: in the Jukebox and smashed the SKIP button.".format(author.display_name))
-                self.econ.bank.withdraw_credits(author, 100)
+                    "{} put {}:gem: in the Jukebox and smashed the SKIP button.".format(author.display_name,
+                                                                                        settings["SKIP_COST"]))
+                self.econ.bank.withdraw_credits(author, settings["SKIP_COST"])
                 await self.bot.say(
                     "{} now has {}:gem:.".format(author.display_name, self.econ.bank.get_balance(author)))
                 vc = self.voice_client(server)
@@ -1927,7 +2004,7 @@ def check_folders():
 
 
 def check_files():
-    default = {"VOLUME": 50, "MAX_LENGTH": 3700, "QUEUE_MODE": True,
+    default = {"VOLUME": 50, "MAX_LENGTH": 3700, "SR_COST": 30, "SKIP_COST": 100, "QUEUE_MODE": True,
                "MAX_CACHE": 0, "SOUNDCLOUD_CLIENT_ID": None,
                "TITLE_STATUS": True, "AVCONV": False, "VOTE_THRESHOLD": 50,
                "SERVERS": {}}
