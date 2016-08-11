@@ -1275,7 +1275,8 @@ class Audio:
             self._clear_queue(server)
             self._add_to_queue(server, url)
         else:
-            await self.bot.say("You can't afford that! Open more Fake Lootboxes to gain Fake Gems.")
+            await self.bot.say(
+                "You can't afford that! You need {}:gem: for a song request.".format(settings["SR_COST"]))
 
     @commands.command(pass_context=True, no_pm=True)
     async def prev(self, ctx):
@@ -1517,11 +1518,15 @@ class Audio:
                     server.id))
                 self._add_to_temp_queue(server, url)
             else:
-                await self.bot.say("You can't afford that! Open more Fake Lootboxes to gain Fake Gems.")
+                await self.bot.say(
+                    "You can't afford that! You need {}:gem: for a song request.".format(settings["SR_COST"]))
         else:
             log.debug("queueing to the actual queue for sid {}".format(
                 server.id))
             self._add_to_queue(server, url)
+
+        #await self.bot.say("{} put {}:gem: in the Jukebox and selected a song.".format(author.display_name,
+        #                                                                               settings["SR_COST"]))
         await self.bot.say("Queued.")
         await self.bot.say("{} now has {}:gem:.".format(author.display_name, self.econ.bank.get_balance(author)))
 
