@@ -415,6 +415,13 @@ class Bank:
         else:
             raise NoAccount()
 
+    def update_name(self, user):
+        server = user.server
+        account = self._get_account(user)
+        account["name"] = user.display_name
+        self.accounts[server.id][user.id] = account
+        self._save_bank()
+
     def can_spend(self, user, amount):
         account = self._get_account(user)
         if account["balance"] >= amount:
@@ -517,6 +524,16 @@ class Economy:
         except AccountAlreadyExists:
             await self.bot.say("{} You already have Fake Overwatch!".format(user.display_name))
 
+    @_bank.command(pass_context=True, no_pm=True)
+    async def updatename(self, ctx):
+        """Updates a user's name in the leaderboards to their current display name"""
+        author = ctx.message.author
+        try:
+            self.bank.update_name(author)
+            await self.bot.say("Done.")
+        except NoAccount:
+            await self.bot.say("You don't have an account.")
+
     @_bank.command(pass_context=True)
     async def balance(self, ctx, user: discord.Member = None):
         """Shows balance of user.
@@ -528,8 +545,9 @@ class Economy:
                 await self.bot.say("{} You have {}:gem:.".format(user.display_name, self.bank.get_balance(user)))
             except NoAccount:
                 await self.bot.say("{} You don't have Fake Overwatch."
-                                   " Type {}buyfakeoverwatch to buy Fake Overwatch for 0:gem:.".format(user.display_name,
-                                                                                                       ctx.prefix))
+                                   " Type {}buyfakeoverwatch to buy Fake Overwatch for 0:gem:.".format(
+                    user.display_name,
+                    ctx.prefix))
         else:
             try:
                 await self.bot.say("{} has {}:gem:.".format(user.display_name, self.bank.get_balance(user)))
@@ -670,8 +688,9 @@ class Economy:
                     lootmessage += lootmessageline + "\n"
                 self.bank.deposit_credits(author, payout)
                 self.payday_register[server.id][id] = int(time.perf_counter())
-                await self.bot.say("{} levelled up and opened a Fake Lootbox!\n".format(author.display_name) + lootmessage +
-                                   "\n\n{} now has {}:gem:.".format(author.display_name, self.bank.get_balance(author)))
+                await self.bot.say(
+                    "{} levelled up and opened a Fake Lootbox!\n".format(author.display_name) + lootmessage +
+                    "\n\n{} now has {}:gem:.".format(author.display_name, self.bank.get_balance(author)))
         else:
             await self.bot.say(
                 "{} You need Fake Overwatch to open a lootbox. Type {}buyfakeoverwatch to buy Fake Overwatch for 0:gem:.".format(
@@ -757,18 +776,19 @@ class Economy:
 
     @commands.command(pass_context=True, no_pm=True)
     async def slot(self, ctx):
-        """Buy a Fake Lootbox with 50 Fake Gems."""
-        bid = 50  # Lootboxes always cost 50.
+        """Buy a Fake Lootbox with Fake Gems."""
         author = ctx.message.author
         server = author.server
+        bid = self.settings[server.id]["BOX_COST"]
         if not self.bank.account_exists(author):
             await self.bot.say(
                 "{} You don't have Fake Overwatch. Type {}buyfakeoverwatch to buy Fake Overwatch.".format(
                     author.mention, ctx.prefix))
             return
         if self.bank.can_spend(author, bid):
-            if self.settings[server.id]["SLOT_MIN"] <= bid <= self.settings[server.id]["SLOT_MAX"]:
+            if True:  # remove deprecated feature
                 if author.id in self.slot_register:
+                    seconds = abs(self.slot_register[author.id] - int(time.perf_counter()))
                     if abs(self.slot_register[author.id] - int(time.perf_counter())) >= self.settings[server.id][
                         "SLOT_TIME"]:
                         self.slot_register[author.id] = int(time.perf_counter())
@@ -776,7 +796,7 @@ class Economy:
                     else:
                         await self.bot.say(
                             "You can't open Fake Lootboxes that fast! You need to wait for the cool Fake Animation! {} seconds left.".format(
-                                self.settings[server.id]["SLOT_TIME"]))
+                                self.settings[server.id]["SLOT_TIME"] - seconds))
                 else:
                     self.slot_register[author.id] = int(time.perf_counter())
                     await self.slot_machine(ctx.message, bid, author)
@@ -784,8 +804,8 @@ class Economy:
                 await self.bot.say("Admin goofed. Tell them about it.")
         else:
             await self.bot.say(
-                "{0} You don't have enough Fake Gems to buy a Fake Lootbox."
-                "Fake Lootboxes cost 50:gem:.".format(author.mention))
+                "{} You don't have enough Fake Gems to buy a Fake Lootbox."
+                "Fake Lootboxes cost {}:gem:.".format(author.mention, bid))
 
     async def slot_machine(self, message, bid, author):
         rolls = []
@@ -824,10 +844,11 @@ class Economy:
                 lootmessageline += "+200:gem:"
             lootmessage += lootmessageline + "\n"
 
-        self.bank.withdraw_credits(message.author, 50)
+        self.bank.withdraw_credits(message.author, bid)
         self.bank.deposit_credits(message.author, payout)
-        await self.bot.say("{} purchased and opened a Fake Lootbox!\n".format(author.display_name) + lootmessage +
-                           "\n\n{} now has {}:gem:.".format(author.display_name, self.bank.get_balance(message.author)))
+        await self.bot.say(
+            "{} purchased and opened a Fake Lootbox for {}:gem:!\n".format(author.display_name, bid) + lootmessage +
+            "\n\n{} now has {}:gem:.".format(author.display_name, self.bank.get_balance(message.author)))
 
     @commands.group(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_server=True)
@@ -857,6 +878,14 @@ class Economy:
         server = ctx.message.server
         self.settings[server.id]["SLOT_MAX"] = bid
         await self.bot.say("Maximum bid is now " + str(bid) + " credits.")
+        fileIO("data/economy/settings.json", "save", self.settings)
+
+    @economyset.command(pass_context=True)
+    async def boxcost(self, ctx, cost: int):
+        """Lootbox cost"""
+        server = ctx.message.server
+        self.settings[server.id]["BOX_COST"] = cost
+        await self.bot.say("Boxes now cost {}:gem:.".format(cost))
         fileIO("data/economy/settings.json", "save", self.settings)
 
     @economyset.command(pass_context=True)
