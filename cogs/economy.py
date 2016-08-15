@@ -250,7 +250,7 @@ epicloot = {
                   "Jailbird Junkrat", "Toasted Junkrat", "Auditva Lúcio", "Synaesthesia Lúcio", "On The Range McCree",
                   "White Hat McCree", "Earthen Mei", "Snow Plum Mei", "Amber Mercy", "Cobalt Mercy", "Jackal Pharah",
                   "Anubis Pharah", "Desert Reaper", "Wight Reaper", "Bundeswehr Reinhardt", "Paragon Reinhardt",
-                  "Pigpen Roadhog", "Stiched Roadhog", "Bone Soldier: 76" "Golden Soldier: 76", "Regal Symmetra",
+                  "Pigpen Roadhog", "Stiched Roadhog", "Bone Soldier: 76", "Golden Soldier: 76", "Regal Symmetra",
                   "Utopaea Symmetra", "Plommon Torbjörn", "Cathode Torbjörn", "Posh Tracer", "Sporty Tracer",
                   "Winter Widowmaker", "Patina Widowmaker", "Desert Winston", "Horizon Winston", "Dawn Zarya",
                   "Midnight Zarya", "Ascendant Zenyatta", "Harmonious Zenyatta"],
