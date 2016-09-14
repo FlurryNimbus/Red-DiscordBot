@@ -21,9 +21,7 @@ import traceback
 #             https://github.com/Rapptz/RoboDanny/tree/async
 #
 
-description = """
-Red - A multifunction Discord bot by Twentysix
-"""
+description = "Red - A multifunction Discord bot by Twentysix"
 
 formatter = commands.HelpFormatter(show_check_failure=False)
 
@@ -31,8 +29,6 @@ bot = commands.Bot(command_prefix=["_"], formatter=formatter,
                    description=description, pm_help=None)
 
 settings = Settings()
-
-from cogs.utils import checks
 
 
 @bot.event
@@ -367,7 +363,6 @@ def load_cogs():
 
 def main():
     global settings
-    global checks
 
     check_folders()
     check_configs()
@@ -388,9 +383,14 @@ def main():
     else:
         owner_cog.owner.hidden = True  # Hides the set owner command from help
     print("-- Logging in.. --")
-    print("Make sure to keep your bot updated by using: git pull")
-    print("and: pip3 install -U git+https://github.com/Rapptz/"
-          "discord.py@master#egg=discord.py[voice]")
+    if os.name == "nt" and os.path.isfile("update.bat"):
+        print("Make sure to keep your bot updated by running the file "
+              "update.bat")
+    else:
+        print("Make sure to keep your bot updated by using: git pull")
+        print("and: pip3 install -U git+https://github.com/Rapptz/"
+              "discord.py@master#egg=discord.py[voice]")
+    print("Official server: https://discord.me/Red-DiscordBot")
     if settings.login_type == "token":
         try:
             yield from bot.login(settings.email)

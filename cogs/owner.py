@@ -68,13 +68,15 @@ class Owner:
             log.exception(e)
             traceback.print_exc()
             await self.bot.say("There was an issue loading the module. Check"
-                               " your console or logs for more information.")
+                               " your console or logs for more information.\n"
+                               "\nError: `{}`".format(e.args[0]))
         except Exception as e:
             log.exception(e)
             traceback.print_exc()
             await self.bot.say('Module was found and possibly loaded but '
                                'something went wrong. Check your console '
-                               'or logs for more information.')
+                               'or logs for more information.\n\n'
+                               'Error: `{}`'.format(e.args[0]))
         else:
             set_cog(module, True)
             await self.disable_commands()
@@ -154,7 +156,8 @@ class Owner:
             log.exception(e)
             traceback.print_exc()
             await self.bot.say("That module could not be loaded. Check your"
-                               " console or logs for more information.")
+                               " console or logs for more information.\n\n"
+                               "Error: `{}`".format(e.args[0]))
         else:
             set_cog(module, True)
             await self.disable_commands()
@@ -222,15 +225,16 @@ class Owner:
                              args=(ctx.message.author,))
         t.start()
 
-    @_set.command()
+    @_set.command(pass_context=True)
     @checks.is_owner()
-    async def prefix(self, *prefixes):
-        """Sets prefixes
+    async def prefix(self, ctx, *prefixes):
+        """Sets Red's prefixes
 
-        Must be separated by a space. Enclose in double
-        quotes if a prefix contains spaces."""
+        Accepts multiple prefixes separated by a space. Enclose in double
+        quotes if a prefix contains spaces.
+        Example: set prefix ! $ ? "two words" """
         if prefixes == ():
-            await self.bot.say("Example: setprefix [ ! ^ .")
+            await send_cmd_help(ctx)
             return
 
         self.bot.command_prefix = sorted(prefixes, reverse=True)
@@ -248,8 +252,15 @@ class Owner:
         """Sets Red's name"""
         name = name.strip()
         if name != "":
-            await self.bot.edit_profile(settings.password, username=name)
-            await self.bot.say("Done.")
+            try:
+                await self.bot.edit_profile(settings.password, username=name)
+            except:
+                await self.bot.say("Failed to change name. Remember that you"
+                                   " can only do it up to 2 times an hour."
+                                   "Use nicknames if you need frequent "
+                                   "changes. {}set nickname".format(ctx.prefix))
+            else:
+                await self.bot.say("Done.")
         else:
             await send_cmd_help(ctx)
 
@@ -342,7 +353,7 @@ class Owner:
         if comm_obj is KeyError:
             await self.bot.say("That command doesn't seem to exist.")
         elif comm_obj is False:
-            await self.bot.say("You cannot disable the commands of the owner cog.")
+            await self.bot.say("You cannot disable owner restricted commands.")
         else:
             comm_obj.enabled = False
             comm_obj.hidden = True
@@ -377,8 +388,9 @@ class Owner:
                     comm_obj = comm_obj.commands[cmd]
         except KeyError:
             return KeyError
-        if comm_obj.cog_name == "Owner":
-            return False
+        for check in comm_obj.checks:
+            if check.__name__ == "is_owner_check":
+                return False
         return comm_obj
 
     async def disable_commands(self): # runs at boot
@@ -421,7 +433,7 @@ class Owner:
             await self.bot.say("I wasn't able to accept the invite."
                                " Try again.")
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, no_pm=True)
     @checks.is_owner()
     async def leave(self, ctx):
         """Leaves server"""
@@ -470,17 +482,24 @@ class Owner:
             return
         owner = discord.utils.get(self.bot.get_all_members(), id=settings.owner)
         author = ctx.message.author
-        sender = "From {} ({}):\n\n".format(author, author.id)
+        if ctx.message.channel.is_private is False:
+            server = ctx.message.server
+            source = ", server **{}** ({})".format(server.name, server.id)
+        else:
+            source = ", direct message"
+        sender = "From **{}** ({}){}:\n\n".format(author, author.id, source)
         message = sender + message
         try:
             await self.bot.send_message(owner, message)
         except discord.errors.InvalidArgument:
             await self.bot.say("I cannot send your message, I'm unable to find"
-                               "my owner... *sigh*")
+                               " my owner... *sigh*")
         except discord.errors.HTTPException:
             await self.bot.say("Your message is too long.")
         except:
             await self.bot.say("I'm unable to deliver your message. Sorry.")
+        else:
+            await self.bot.say("Your message has been sent.")
 
     @commands.command()
     async def info(self):
